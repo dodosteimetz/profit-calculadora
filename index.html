@@ -94,28 +94,7 @@
     <div id="displayLogs"></div>
 </div>
 
-<script>
-    // =========================================================
-    // 1. O SEU DICIONÁRIO DE ITENS (TRADUTOR DO GE)
-    // =========================================================
-    let TRADUTOR_GE = {};
-
-// Função para carregar o dicionário de itens
-async function carregarDicionario() {
-    try {
-        // Substitua pela URL real do seu arquivo .json no GitHub
-        const response = await fetch('items.json');
-        TRADUTOR_GE = await response.json();
-        console.log("Dicionário carregado com sucesso!");
-        renderizar(); // Re-renderiza para aplicar os nomes
-    } catch (error) {
-        console.error("Erro ao carregar o JSON de itens:", error);
-    }
-}
-
-// Chama a função ao abrir a página
-carregarDicionario();
-
+<script>   
     let db = JSON.parse(localStorage.getItem('rs3_profit_v4')) || { logs: [], pouchBase: 0 };
     let abasFechadas = new Set(JSON.parse(localStorage.getItem('rs3_profit_abas')) || []); 
 
