@@ -104,7 +104,7 @@
 async function carregarDicionario() {
     try {
         // Substitua pela URL real do seu arquivo .json no GitHub
-        const response = await fetch('rs3_items.json%20(1)');
+        const response = await fetch('items.json');
         TRADUTOR_GE = await response.json();
         console.log("Dicionário carregado com sucesso!");
         renderizar(); // Re-renderiza para aplicar os nomes
