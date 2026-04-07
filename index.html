@@ -98,48 +98,23 @@
     // =========================================================
     // 1. O SEU DICIONÁRIO DE ITENS (TRADUTOR DO GE)
     // =========================================================
-    const TRADUTOR_GE = {        
-        "30915": "pena",
-        "53073": "coco",
-        "52342": "Sifão de Equipamento",
-		"38872": "Sifão de Cristal",
-        "19805": "Urna Decorada",
-		"29315": "Bright energy",
-		"29318": "Gleaming energy",
-		"29324": "Incandescent energy",
-		"29323": "Luminous energ",
-		"29322": "Radiant energy",
-		"29321": "Brilliant energy",
-		"29320": "Lustrous energy",
-		"29317": "Sparkling energy",
-		"29316": "Glowing energy",
-		"29319": "Vibrant energy",
-		"29314": "Flickering energy",
-		"29313": "Pale energy",
-		"48479": "dino",
-		"48499": "dino",
-		"48487": "dino",
-		"48503": "dino",
-		"53093": "casca",
-		"48505": "dino",
-		"48493": "dino",
-		"48489": "dino",
-		"35008": "osso hardened",
-		"1513" : "lenha magica",
-		"48491": "dino",
-		"48501": "dino",
-		"47314": "Huge plated rune salvage",
-		"536"  : "osso drag",
-		"8780" : "tauba teca",
-		"29492": "nota",
-		"48497": "dino",
-		"48495": "dino",
-		"48475": "dino",
-		"48483": "dino",
-		"53921": "dark core colar",
-		"56836": "carta metamorfo"
-        // Adicione seus novos IDs aqui! Formato: "ID": "NOME DO ITEM",
-    };
+    let TRADUTOR_GE = {};
+
+// Função para carregar o dicionário de itens
+async function carregarDicionario() {
+    try {
+        // Substitua pela URL real do seu arquivo .json no GitHub
+        const response = await fetch('rs3_items.json%20(1)');
+        TRADUTOR_GE = await response.json();
+        console.log("Dicionário carregado com sucesso!");
+        renderizar(); // Re-renderiza para aplicar os nomes
+    } catch (error) {
+        console.error("Erro ao carregar o JSON de itens:", error);
+    }
+}
+
+// Chama a função ao abrir a página
+carregarDicionario();
 
     let db = JSON.parse(localStorage.getItem('rs3_profit_v4')) || { logs: [], pouchBase: 0 };
     let abasFechadas = new Set(JSON.parse(localStorage.getItem('rs3_profit_abas')) || []); 
@@ -469,9 +444,10 @@
                         
                         // LÓGICA DO NOME (Retroativa, sem COMPRA/VENDA escrito)
                         let nomeExibicao = l.desc; 
-                        if (l.itemId) {
-                            nomeExibicao = TRADUTOR_GE[l.itemId] || `Item ID: ${l.itemId}`;
-                        }
+						if (l.itemId) {
+   						 // Busca no JSON carregado externamente
+    					nomeExibicao = TRADUTOR_GE[l.itemId] || `Item ID: ${l.itemId}`;
+						}
 
                         html += `<tr>
                             <td class="col-skill">
