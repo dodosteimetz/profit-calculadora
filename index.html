@@ -446,8 +446,14 @@ carregarDicionario();
                         let nomeExibicao = l.desc; 
 						if (l.itemId) {
    						 // Busca no JSON carregado externamente
-    					nnomeExibicao = TRADUTOR_GE[l.itemId] || `Item ID: ${l.itemId}`;
-						}
+    					const idString = String(l.itemId).trim();
+    
+    					if (TRADUTOR_GE && TRADUTOR_GE[idString]) {
+        					nomeExibicao = TRADUTOR_GE[idString];
+    					} else {
+        				nomeExibicao = `ID: ${l.itemId} (Não encontrado)`;
+    }
+}
 
                         html += `<tr>
                             <td class="col-skill">
@@ -470,7 +476,29 @@ carregarDicionario();
         });
     }
     document.getElementById('dataAtividade').valueAsDate = new Date();
-    renderizar();
+    
+	let TRADUTOR_GE = {}; // Começa como um objeto vazio
+
+	async function iniciarApp() {
+    	try {
+       	 	// Use o nome exato do arquivo que está no seu repositório GitHub
+       	 	const response = await fetch('rs3_items.json%20(1)'); 
+        	if (!response.ok) throw new Error("Erro ao baixar o JSON");
+        
+        	TRADUTOR_GE = await response.json();
+        	console.log("Dicionário carregado!", Object.keys(TRADUTOR_GE).length, "itens.");
+        
+        	// SÓ CHAMA O RENDERIZAR DEPOIS QUE O DICIONÁRIO EXISTIR
+        	renderizar();
+    	} catch (error) {
+        	console.error("Falha ao carregar itens:", error);
+        	// Mesmo se falhar, renderiza para mostrar os IDs pelo menos
+        	renderizar();
+    	}
+	}
+
+// Inicia tudo
+iniciarApp();
 </script>
 </body>
 </html>
