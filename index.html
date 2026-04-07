@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>RS3 Profit Master - v20.0 (GE Sync + Smart Merge)</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+    body { background: #12141d; color: #cfbc91; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+    .container { max-width: 1000px; margin: auto; }
+    
+    .pouch-header { background: #1a1d26; border-left: 4px solid #cfbc91; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .pouch-valor { font-size: 28px; font-weight: bold; color: #ffcc00; }
+
+    .input-area { background: #1a1d26; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #2d313d; }
+    
+    .ocr-dropzone { border: 2px dashed #3d4250; border-radius: 8px; padding: 15px; text-align: center; color: #8b949e; margin-bottom: 15px; background: #0d0f14; transition: 0.3s; }
+    .ocr-dropzone:hover { border-color: #58a6ff; background: #161b22; }
+    .ocr-status { font-size: 13px; margin-top: 5px; font-weight: bold; }
+    .ocr-raw { width: 100%; background: transparent; border: none; color: #cfbc91; font-size: 11px; text-align: center; margin-top: 5px; outline: none; }
+
+    .linha-inputs { display: grid; grid-template-columns: 2fr 0.8fr 1fr 1fr 120px; gap: 10px; }
+    input, select { background: #0d0f14; border: 1px solid #3d4250; color: #fff; padding: 10px; border-radius: 4px; width: 100%; box-sizing: border-box; }
+    
+    /* Ícones */
+    .skill-cell { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .icon-wrapper { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 14px; border-radius: 4px; background: transparent; }
+    .icon-wrapper img { width: 16px; height: 16px; object-fit: contain; }
+    .icon-boss { width: 24px; height: 24px; background: #2d2d2d; border: 1px solid #ffcc00; box-shadow: 0 0 5px rgba(255, 204, 0, 0.2); }
+    .icon-boss img { width: 20px; height: 20px; }
+    .icon-rwt { background: #4a0000; border: 1px solid #ff4444; }
+    .select-item { background: transparent; border: none; color: #8b949e; padding: 0; cursor: pointer; font-size: 11px; width: auto; -webkit-appearance: none; }
+
+    /* Tabela e Botões */
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 6px 12px; font-size: 14px; border-bottom: 1px solid #161b22; }
+    .col-skill { width: 1%; white-space: nowrap; padding-right: 0; }
+    .col-desc { padding-left: 8px; }
+    .day-separator td { background: #10141a; padding: 8px 15px; color: #c9d1d9; font-size: 13px; font-weight: bold; border-top: 1px solid #21262d; }
+
+    button.btn-add { background: #238636; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    button.btn-add:hover { background: #2ea043; }
+    .btn-del { background: #da3633; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; opacity: 0.5; }
+    .btn-del:hover { opacity: 1; }
+
+    /* Botão de Mesclar (Merge) */
+    .btn-merge { background: rgba(88, 166, 255, 0.1); color: #58a6ff; border: 1px solid rgba(88, 166, 255, 0.3); padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-left: 15px; transition: 0.2s; }
+    .btn-merge:hover { background: rgba(88, 166, 255, 0.3); }
+
+    /* Layout Cabeçalhos */
+    .mes-container { background: #161b22; border-radius: 8px; margin-bottom: 20px; border: 1px solid #30363d; }
+    .mes-header { background: #1c2128; padding: 15px 20px; display: flex; flex-direction: column; cursor: pointer; border-bottom: 1px solid #30363d; }
+    .semana-header { padding: 12px 15px; background: #161b22; display: flex; flex-direction: column; cursor: pointer; border-bottom: 1px solid #21262d; }
+    .header-main { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    .header-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+    .category-summary { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; margin-top: 10px; }
+    .cat-chip { background: rgba(255, 255, 255, 0.05); padding: 2px 8px 2px 4px; border-radius: 6px; border: 1px solid #30363d; display: flex; align-items: center; font-size: 11px; gap: 6px; min-height: 28px; }
+    .semana-bloco { background: #0d1117; margin: 10px; border-radius: 6px; border: 1px solid #21262d; overflow: hidden; }
+    .media-tag { background: rgba(56, 139, 253, 0.1); color: #58a6ff; padding: 4px 10px; border-radius: 12px; font-size: 12px; border: 1px solid rgba(56, 139, 253, 0.3); }
+    
+    .hidden { display: none; }
+    .hover-reveal { cursor: help; display: inline-block; font-weight: bold; }
+    .hover-reveal .view-full { display: none; } 
+    .hover-reveal:hover .view-short { display: none; } 
+    .hover-reveal:hover .view-full { display: inline-block; } 
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="pouch-header">
+        <div>
+            <span style="font-size: 12px; color: #8b949e;">POUCH ATUAL</span><br>
+            <div id="totalPouch" class="pouch-valor">0.00M GP</div>
+        </div>
+        <input type="text" id="pouchBase" placeholder="Saldo Inicial" onchange="salvarPouch()" style="width: 150px; text-align: right;">
+    </div>
+
+    <div class="input-area">
+        <div class="ocr-dropzone" id="dropzone">
+            📸 <b>Dê Ctrl+V aqui</b> com o código do LUA (RS3SYNC) ou o Print do Jogo (OCR).
+            <div id="ocrStatus" class="ocr-status">Aguardando dados...</div>
+            <input type="text" id="ocrRaw" class="ocr-raw" placeholder="O texto bruto lido aparecerá aqui..." readonly>
+        </div>
+
+        <div class="linha-inputs">
+            <input type="text" id="descAtividade" placeholder="Item (ex: engrama)">
+            <input type="text" id="qtdAtividade" placeholder="Qtd">
+            <input type="text" id="valorGP" placeholder="GP (ex: 45m)">
+            <input type="date" id="dataAtividade">
+            <button class="btn-add" onclick="adicionar()">Lançar</button>
+        </div>
+    </div>
+
+    <div id="displayLogs"></div>
+</div>
+
+<script>
+    // =========================================================
+    // 1. O SEU DICIONÁRIO DE ITENS (TRADUTOR DO GE)
+    // =========================================================
+    const TRADUTOR_GE = {        
+        "30915": "pena",
+        "53073": "coco",
+        "52342": "Sifão de Equipamento",
+		"38872": "Sifão de Cristal",
+        "19805": "Urna Decorada",
+		"29315": "Bright energy",
+		"29318": "Gleaming energy",
+		"29324": "Incandescent energy",
+		"29323": "Luminous energ",
+		"29322": "Radiant energy",
+		"29321": "Brilliant energy",
+		"29320": "Lustrous energy",
+		"29317": "Sparkling energy",
+		"29316": "Glowing energy",
+		"29319": "Vibrant energy",
+		"29314": "Flickering energy",
+		"29313": "Pale energy",
+		"48479": "dino",
+		"48499": "dino",
+		"48487": "dino",
+		"48503": "dino",
+		"53093": "casca",
+		"48505": "dino",
+		"48493": "dino",
+		"48489": "dino",
+		"35008": "osso hardened",
+		"1513" : "lenha magica",
+		"48491": "dino",
+		"48501": "dino",
+		"47314": "Huge plated rune salvage",
+		"536"  : "osso drag",
+		"8780" : "tauba teca",
+		"29492": "nota",
+		"48497": "dino",
+		"48495": "dino",
+		"48475": "dino",
+		"48483": "dino",
+		"53921": "dark core colar",
+		"56836": "carta metamorfo"
+        // Adicione seus novos IDs aqui! Formato: "ID": "NOME DO ITEM",
+    };
+
+    let db = JSON.parse(localStorage.getItem('rs3_profit_v4')) || { logs: [], pouchBase: 0 };
+    let abasFechadas = new Set(JSON.parse(localStorage.getItem('rs3_profit_abas')) || []); 
+
+    const skillIcons = {
+        'money': '💰', 'Boss': 'https://runescape.wiki/images/Reaper_points.png', 'RWT': '💸', 'nota': 'https://runescape.wiki/images/Bond.png',
+        'Agility': 'https://runescape.wiki/images/Agility.png', 'Archaeology': 'https://runescape.wiki/images/Archaeology.png',            
+        'Construction': 'https://runescape.wiki/images/Construction.png', 'Cooking': 'https://runescape.wiki/images/Cooking.png',
+        'Crafting': 'https://runescape.wiki/images/Crafting.png', 'Divination': 'https://runescape.wiki/images/Divination.png',
+        'Dungeoneering': 'https://runescape.wiki/images/Dungeoneering.png', 'Farming': 'https://runescape.wiki/images/Farming.png',
+        'Firemaking': 'https://runescape.wiki/images/Firemaking.png', 'Fishing': 'https://runescape.wiki/images/Fishing.png',
+        'Fletching': 'https://runescape.wiki/images/Fletching.png', 'Herblore': 'https://runescape.wiki/images/Herblore.png',
+        'Hunter': 'https://runescape.wiki/images/Hunter.png', 'Invention': 'https://runescape.wiki/images/Invention.png',
+        'Mining': 'https://runescape.wiki/images/Mining.png', 'Necromancy': 'https://runescape.wiki/images/Necromancy.png',
+        'Prayer': 'https://runescape.wiki/images/Prayer.png', 'Runecrafting': 'https://runescape.wiki/images/Runecrafting.png',
+        'Slayer': 'https://runescape.wiki/images/Slayer.png', 'Smithing': 'https://runescape.wiki/images/Smithing.png',
+        'Summoning': 'https://runescape.wiki/images/Summoning.png', 'Thieving': 'https://runescape.wiki/images/Thieving.png',
+        'Woodcutting': 'https://runescape.wiki/images/Woodcutting.png'
+    };
+
+    const skillLabels = { 
+        'money': 'Geral', 'Boss': 'Boss', 'Agility': 'Agilidade', 'Archaeology': 'Arch',        
+        'Construction': 'Construção', 'Cooking': 'Culinária', 'Crafting': 'Artesanato',
+        'Divination': 'Divinação', 'Dungeoneering': 'Dungeon', 'Farming': 'Agricultura',
+        'Firemaking': 'FM', 'Fishing': 'Pesca', 'Fletching': 'Fletching', 'Herblore': 'Herb',
+        'Hunter': 'Caça', 'Invention': 'Invenção', 'Mining': 'Mineração', 'Necromancy': 'Necro',
+        'Prayer': 'Oração', 'Runecrafting': 'RC', 'Slayer': 'Extermínio', 'Smithing': 'Metalurgia',        
+        'Summoning': 'Evocação', 'Thieving': 'Roubo', 'Woodcutting': 'WC', 'RWT': 'RWT/Saque',
+		'nota': 'nota'
+    };
+
+    function getIconHtml(skill) {
+        const icon = skillIcons[skill] || '❓';
+        let extraClass = "";
+        if (skill === 'Boss') extraClass = "icon-boss";
+        if (skill === 'RWT' || skill === 'nota') extraClass = "icon-rwt";
+        if (icon.startsWith('http')) return `<div class="icon-wrapper ${extraClass}"><img src="${icon}"></div>`;
+        return `<div class="icon-wrapper ${extraClass}">${icon}</div>`;
+    }
+
+    function parseValue(str) {
+        if (!str) return 0;
+        let val = str.toString().toLowerCase();
+        let mult = 1;
+        if (val.includes('m')) mult = 1000000;
+        else if (val.includes('k')) mult = 1000;
+        else if (val.includes('b')) mult = 1000000000;
+        return parseFloat(val.replace(/[mkbgp]/g, '').trim()) * mult;
+    }
+
+    function parseQtd(str) {
+        if (!str) return 1;
+        let val = str.toString().toLowerCase().trim();
+        let mult = 1;
+        if (val.includes('m')) mult = 1000000;
+        else if (val.includes('k')) mult = 1000;
+        return (parseFloat(val.replace(/[a-z]/gi, '')) || 1) * mult;
+    }
+
+    function formatShort(num) {
+        let n = Math.abs(num);
+        if (n >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+        if (n >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+        if (n >= 1e3) return (num / 1e3).toFixed(0) + 'K';
+        return num.toFixed(0);
+    }
+
+    function renderMoney(num, isLarge = false) {
+        let color = num >= 0 ? '#3fb950' : '#f85149';
+        let extraStyle = isLarge ? 'font-size: 16px;' : '';
+        return `<span class="hover-reveal" style="color:${color}; ${extraStyle}"><span class="view-short">${num >= 0 ? '+' : ''}${formatShort(num)}</span><span class="view-full">${num >= 0 ? '+' : ''}${num.toLocaleString('pt-BR')}</span></span>`;
+    }
+
+    function renderMedia(totalProd, diasCount) {
+        if (diasCount === 0) return '';
+        let media = totalProd / diasCount;
+        return `<span class="media-tag hover-reveal">📅 Média: ${formatShort(media)}/d<span class="view-full">(${media.toLocaleString('pt-BR')}/dia)</span></span>`;
+    }
+
+    function renderCategoryChips(catObj) {
+        let hasItems = Object.keys(catObj).some(skill => catObj[skill] !== 0);
+        if (!hasItems) return '';
+        let html = '<div class="category-summary">';
+        Object.keys(catObj).sort().forEach(skill => {
+            if (catObj[skill] !== 0) { html += `<div class="cat-chip">${getIconHtml(skill)} <b>${formatShort(catObj[skill])}</b></div>`; }
+        });
+        html += '</div>'; return html;
+    }
+
+    // =========================================================
+    // LISTENER DE COLAR (ACEITA TEXTO LUA OU IMAGEM OCR)
+    // =========================================================
+    document.addEventListener('paste', async (e) => {
+        const clipboardData = e.clipboardData || window.clipboardData;
+        const pastedText = clipboardData.getData('text');
+
+        if (pastedText && pastedText.startsWith("RS3SYNC:")) {
+            e.preventDefault(); 
+            processarSincronizacaoLUA(pastedText);
+            return; 
+        }
+
+        const items = clipboardData.items;
+        for (let index in items) {
+            const item = items[index];
+            if (item.kind === 'file' && item.type.includes('image')) {
+                const blob = item.getAsFile(); 
+                processarImagem(blob);
+            }
+        }
+    });
+
+    // Função de Processar Lua (Imposto de 2% nas vendas)
+    function processarSincronizacaoLUA(textoColado) {
+        const stringDados = textoColado.replace("RS3SYNC:", "");
+        const ordens = stringDados.split(";");
+        let itensAdicionados = 0;
+
+        ordens.forEach(ordem => {
+            if (!ordem || !ordem.includes("|")) return;
+            
+            const [id, qtd, valorTotal, tipo] = ordem.split("|");
+            
+            let valorBruto = parseInt(valorTotal);
+            let valorFinal = valorBruto;
+
+            if (tipo === "VENDA") {
+                valorFinal = valorBruto - Math.floor(valorBruto * 0.02);
+            }
+
+            db.logs.push({
+                skill: 'money',
+                itemId: id, 
+                tipoGE: tipo, 
+                desc: "", // Vazio para o render usar o dicionário
+                qtd: qtd,
+                gp: tipo === "COMPRA" ? -valorBruto : valorFinal,
+                data: document.getElementById('dataAtividade').value || new Date().toISOString().split('T')[0]
+            });
+            
+            itensAdicionados++;
+        });
+
+        if (itensAdicionados > 0) {
+            db.logs.sort((a,b) => new Date(a.data) - new Date(b.data));
+            salvar();
+            
+            document.getElementById('ocrStatus').innerHTML = `✅ ${itensAdicionados} itens sincronizados! (Taxa 2% aplicada nas vendas)`;
+            document.getElementById('ocrStatus').style.color = "#3fb950";
+        }
+    }
+
+    async function processarImagem(imageBlob) {
+        const statusDiv = document.getElementById('ocrStatus'); const rawInput = document.getElementById('ocrRaw');
+        statusDiv.innerHTML = "⏳ Lendo a imagem via IA... (Aguarde)"; statusDiv.style.color = "#58a6ff"; rawInput.value = "";
+        try {
+            const { data: { text } } = await Tesseract.recognize(imageBlob, 'eng');
+            statusDiv.innerHTML = "✅ Leitura concluída! Confira os campos abaixo."; statusDiv.style.color = "#3fb950";
+            rawInput.value = text.trim().replace(/\n/g, ' - ');
+            preencherCamposInteligente(text);
+        } catch (error) {
+            console.error(error); statusDiv.innerHTML = "❌ Erro ao ler a imagem."; statusDiv.style.color = "#f85149";
+        }
+    }
+
+    function preencherCamposInteligente(texto) {
+        let textoLimpo = texto.replace(/[\.\,]/g, '').toLowerCase();
+        let numerosEncontrados = textoLimpo.match(/\d+[mkb]?/gi) || [];
+        let valoresProcessados = numerosEncontrados.map(n => ({ original: n, puro: parseValue(n) }));
+        valoresProcessados.sort((a, b) => b.puro - a.puro);
+
+        if (valoresProcessados.length > 0) {
+            let gpFinal = valoresProcessados[0].original;
+            let qtdFinal = "1";
+            if (valoresProcessados.length > 1) {
+                let possivelQtd = valoresProcessados.find(v => v.puro < valoresProcessados[0].puro && v.puro > 0);
+                if (possivelQtd) qtdFinal = possivelQtd.original.replace(/[a-z]/gi, '');
+            }
+            document.getElementById('valorGP').value = gpFinal;
+            document.getElementById('qtdAtividade').value = qtdFinal;
+            document.getElementById('descAtividade').value = "";
+            document.getElementById('descAtividade').focus();
+            document.querySelector('.btn-add').style.boxShadow = "0 0 15px #ffcc00";
+            setTimeout(() => document.querySelector('.btn-add').style.boxShadow = "none", 1500);
+        }
+    }
+
+    function adicionar() {
+        const desc = document.getElementById('descAtividade').value;
+        const gp = parseValue(document.getElementById('valorGP').value);
+        if(!desc) return;
+        db.logs.push({
+            skill: 'money', desc: desc, qtd: document.getElementById('qtdAtividade').value || "1",
+            gp: gp, data: document.getElementById('dataAtividade').value || new Date().toISOString().split('T')[0]
+        });
+        db.logs.sort((a,b) => new Date(a.data) - new Date(b.data));
+        salvar();
+        document.getElementById('descAtividade').value = "";
+        document.getElementById('valorGP').value = "";
+        document.getElementById('ocrStatus').innerHTML = "Aguardando dados..."; document.getElementById('ocrStatus').style.color = "#8b949e"; document.getElementById('ocrRaw').value = "";
+    }
+
+    function alterarSkill(idx, novaSkill) { db.logs[idx].skill = novaSkill; salvar(); }
+    function salvar() { localStorage.setItem('rs3_profit_v4', JSON.stringify(db)); renderizar(); }
+    function salvarPouch() { db.pouchBase = parseValue(document.getElementById('pouchBase').value); salvar(); }
+    function removerItem(i) { if(confirm("Remover lançamento?")) { db.logs.splice(i,1); salvar(); } }
+
+    function toggle(id) { 
+        const el = document.getElementById(id); el.classList.toggle('hidden'); 
+        if(el.classList.contains('hidden')) { abasFechadas.add(id); } else { abasFechadas.delete(id); }
+        localStorage.setItem('rs3_profit_abas', JSON.stringify(Array.from(abasFechadas)));
+    }
+
+    // Função Mágica para Agrupar Itens Repetidos de um Dia (Adaptada para LUA)
+    function agruparDia(dataAlvo) {
+        if(!confirm("Tem certeza? Isso vai juntar a quantidade e o GP de itens com a mesma categoria e nome deste dia.")) return;
+
+        let logsDoDia = db.logs.filter(l => l.data === dataAlvo);
+        let logsOutrosDias = db.logs.filter(l => l.data !== dataAlvo);
+        let agrupados = {};
+
+        logsDoDia.forEach(l => {
+            // Descobre o nome atual do item (via dicionário se for GE, ou texto manual)
+            let nomeAtual = l.desc;
+            if (l.itemId) {
+                nomeAtual = TRADUTOR_GE[l.itemId] || `Item ID: ${l.itemId}`;
+            }
+
+            let chave = l.skill + '|' + nomeAtual.trim().toLowerCase();
+            
+            if(!agrupados[chave]) {
+                agrupados[chave] = {
+                    skill: l.skill,
+                    desc: nomeAtual, // Salva já com o nome traduzido
+                    qtd: parseQtd(l.qtd), 
+                    gp: l.gp,
+                    data: l.data
+                };
+            } else {
+                agrupados[chave].qtd += parseQtd(l.qtd);
+                agrupados[chave].gp += l.gp;
+            }
+        });
+
+        let novosLogs = Object.values(agrupados).map(item => ({
+            ...item,
+            qtd: item.qtd.toString() 
+        }));
+
+        db.logs = [...logsOutrosDias, ...novosLogs];
+        db.logs.sort((a,b) => new Date(a.data) - new Date(b.data));
+        salvar();
+    }
+
+    function renderizar() {
+        const div = document.getElementById('displayLogs');
+        div.innerHTML = "";
+        let saldo = db.pouchBase;
+        const meses = {};
+
+        db.logs.forEach((l, idx) => {
+            const d = new Date(l.data + 'T12:00:00');
+            const mKey = `${d.getMonth()+1}/${d.getFullYear()}`;
+            const primeiroDiaMes = new Date(d.getFullYear(), d.getMonth(), 1);
+            const offsetSemana = primeiroDiaMes.getDay(); // Dom=0, Seg=1... semanas Dom-Sáb
+            const sKey = Math.ceil((d.getDate() + offsetSemana) / 7);
+            const diaKey = l.data;
+            if(!meses[mKey]) meses[mKey] = { total:0, prodTotal:0, dias:new Set(), cats:{}, semanas:{} };
+            if(!meses[mKey].semanas[sKey]) meses[mKey].semanas[sKey] = { total:0, prodTotal:0, dias:new Set(), cats:{}, diasObj:{} };
+            if(!meses[mKey].semanas[sKey].diasObj[diaKey]) meses[mKey].semanas[sKey].diasObj[diaKey] = { total:0, logs:[] };
+            
+            meses[mKey].cats[l.skill] = (meses[mKey].cats[l.skill] || 0) + l.gp;
+            meses[mKey].semanas[sKey].cats[l.skill] = (meses[mKey].semanas[sKey].cats[l.skill] || 0) + l.gp;
+            
+            if(l.skill !== 'RWT' && !/rwt|saque/i.test(l.desc)) { 
+                meses[mKey].prodTotal += l.gp; 
+                meses[mKey].semanas[sKey].prodTotal += l.gp; 
+            }
+            
+            meses[mKey].dias.add(l.data); meses[mKey].semanas[sKey].dias.add(l.data);
+            meses[mKey].total += l.gp; meses[mKey].semanas[sKey].total += l.gp;
+            meses[mKey].semanas[sKey].diasObj[diaKey].total += l.gp;
+            saldo += l.gp;
+            meses[mKey].semanas[sKey].diasObj[diaKey].logs.push({...l, originalIdx: idx});
+        });
+
+        document.getElementById('totalPouch').innerHTML = renderMoney(saldo, true) + " GP";
+        document.getElementById('pouchBase').value = db.pouchBase.toLocaleString('pt-BR');
+
+        Object.keys(meses).reverse().forEach(m => {
+            let mData = meses[m]; let mId = `m-${m.replace('/','-')}`; let mClasse = abasFechadas.has(mId) ? 'hidden' : '';
+
+            let html = `<div class="mes-container">
+                <div class="mes-header" onclick="toggle('${mId}')">
+                    <div class="header-main">
+                        <span style="font-weight:bold; font-size:15px; color:#cfbc91;">Mês ${m}</span>
+                        <div class="header-right">${renderMedia(mData.prodTotal, mData.dias.size)}${renderMoney(mData.total, true)}</div>
+                    </div>
+                    ${renderCategoryChips(mData.cats)}
+                </div>
+                <div id="${mId}" class="${mClasse}">`;
+
+            Object.keys(mData.semanas).reverse().forEach(s => {
+                let sData = mData.semanas[s]; let sId = `s-${m.replace('/','-')}-${s}`; let sClasse = abasFechadas.has(sId) ? 'hidden' : '';
+
+                html += `<div class="semana-bloco">
+                    <div class="semana-header" onclick="toggle('${sId}')">
+                        <div class="header-main">
+                            <span style="font-weight:bold; color:#cfbc91;">Semana ${s}</span>
+                            <div class="header-right">${renderMedia(sData.prodTotal, sData.dias.size)}${renderMoney(sData.total)}</div>
+                        </div>
+                        ${renderCategoryChips(sData.cats)}
+                    </div>
+                    <div id="${sId}" class="${sClasse}"><table>`;
+
+                Object.keys(sData.diasObj).sort((a,b) => new Date(b) - new Date(a)).forEach(dia => {
+                    
+                    html += `<tr class="day-separator">
+                                <td colspan="2">
+                                    📅 ${dia.split('-').reverse().join('/')}
+                                    <button class="btn-merge" onclick="agruparDia('${dia}')" title="Agrupar itens idênticos do dia">🔄 Mesclar</button>
+                                </td>
+                                <td colspan="2" style="text-align:right;">Saldo do Dia: ${renderMoney(sData.diasObj[dia].total)}</td>
+                             </tr>`;
+                    
+                    sData.diasObj[dia].logs.reverse().forEach(l => {
+                        
+                        // LÓGICA DO NOME (Retroativa, sem COMPRA/VENDA escrito)
+                        let nomeExibicao = l.desc; 
+                        if (l.itemId) {
+                            nomeExibicao = TRADUTOR_GE[l.itemId] || `Item ID: ${l.itemId}`;
+                        }
+
+                        html += `<tr>
+                            <td class="col-skill">
+                                <div class="skill-cell">
+                                    ${getIconHtml(l.skill)}
+                                    <select class="select-item" onchange="alterarSkill(${l.originalIdx}, this.value)">
+                                        ${Object.keys(skillLabels).map(s => `<option value="${s}" ${l.skill === s ? 'selected' : ''}>${skillLabels[s]}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </td>
+                            <td class="col-desc"><b>${nomeExibicao}</b> <small style="color:#8b949e">(${l.qtd})</small></td>
+                            <td style="text-align:right;">${renderMoney(l.gp)}</td>
+                            <td style="width:30px; text-align:center;"><button class="btn-del" onclick="removerItem(${l.originalIdx})">✕</button></td>
+                        </tr>`;
+                    });
+                });
+                html += `</table></div></div>`;
+            });
+            div.innerHTML += html + `</div></div>`;
+        });
+    }
+    document.getElementById('dataAtividade').valueAsDate = new Date();
+    renderizar();
+</script>
+</body>
+</html>
