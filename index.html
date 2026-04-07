@@ -446,7 +446,7 @@ carregarDicionario();
                         let nomeExibicao = l.desc; 
 						if (l.itemId) {
    						 // Busca no JSON carregado externamente
-    					nomeExibicao = TRADUTOR_GE[l.itemId] || `Item ID: ${l.itemId}`;
+    					nomeExibicao = TRADUTOR_GE[String(l.itemId)] || `Item ID: ${l.itemId}`;
 						}
 
                         html += `<tr>
