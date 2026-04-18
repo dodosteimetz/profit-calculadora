@@ -87,7 +87,7 @@
             <input type="text" id="qtdAtividade" placeholder="Qtd">
             <input type="text" id="valorGP" placeholder="GP (ex: 45m)">
             <input type="date" id="dataAtividade">
-            <button class="btn-add" onclick="adicionar()">Lançar</button>
+            <button class="btn-add" onclick="()">Lançar</button>
         </div>
     </div>
 
@@ -314,6 +314,7 @@
         const desc = document.getElementById('descAtividade').value;
         const gp = parseValue(document.getElementById('valorGP').value);
         if(!desc) return;
+		const categoriaAutomatica = autoCategorizar(desc);
         db.logs.push({
             skill: categoriaAutomatica, // <--- ALTERADO AQUI
             desc: desc, 
