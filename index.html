@@ -125,6 +125,31 @@
 		'nota': 'nota'
     };
 
+	// SISTEMA DE AUTO-CATEGORIZAÇÃO
+    // =========================================================
+    const regrasAutoCategoria = {
+        'bond': 'nota',
+        'dark facet': 'Boss',
+        'bolg': 'Boss',
+		'silverhawk': 'Agility', // O sistema vai entender e converter para "Agilidade"
+		'wildcard': 'Slayer', // Captura QUALQUER tipo de wildcard
+		'rwt': 'RWT',
+        // Adicione mais itens e categorias aqui conforme precisar!
+        // O nome deve estar em minúsculo. A categoria deve ser o ID exato (ex: 'Boss', 'nota', 'Archaeology').
+    };
+
+    function autoCategorizar(nomeItem) {
+        if (!nomeItem) return 'money'; // Categoria padrão (Geral)
+        let nomeFormatado = nomeItem.toLowerCase().trim();
+        
+        for (let palavraChave in regrasAutoCategoria) {
+            if (nomeFormatado.includes(palavraChave)) {
+                return regrasAutoCategoria[palavraChave];
+            }
+        }
+        return 'money'; // Retorna Geral se não achar nada
+    }
+	
     function getIconHtml(skill) {
         const icon = skillIcons[skill] || '❓';
         let extraClass = "";
@@ -224,8 +249,12 @@
                 valorFinal = valorBruto - Math.floor(valorBruto * 0.02);
             }
 
+			// Descobre o nome do item usando o dicionário GE (se já estiver carregado)
+            let nomeDoItem = TRADUTOR_GE[id] || "";
+            let categoriaAutomatica = autoCategorizar(nomeDoItem);
+			
             db.logs.push({
-                skill: 'money',
+                skill: categoriaAutomatica,
                 itemId: id, 
                 tipoGE: tipo, 
                 desc: "", // Vazio para o render usar o dicionário
@@ -286,8 +315,11 @@
         const gp = parseValue(document.getElementById('valorGP').value);
         if(!desc) return;
         db.logs.push({
-            skill: 'money', desc: desc, qtd: document.getElementById('qtdAtividade').value || "1",
-            gp: gp, data: document.getElementById('dataAtividade').value || new Date().toISOString().split('T')[0]
+            skill: categoriaAutomatica, // <--- ALTERADO AQUI
+            desc: desc, 
+            qtd: document.getElementById('qtdAtividade').value || "1",
+            gp: gp, 
+            data: document.getElementById('dataAtividade').value || new Date().toISOString().split('T')[0]
         });
         db.logs.sort((a,b) => new Date(a.data) - new Date(b.data));
         salvar();
