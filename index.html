@@ -255,7 +255,7 @@
     }
 	
     function renderCategoryChips(catObj) {
-        let hasItems = Object.keys(catObj).some(skill => catObj[skill].totalGp !== 0);
+        let hasItems = (catObj).some(skill => catObj[skill].totalGp !== 0);
         if (!hasItems) return '';
         let html = '<div class="category-summary">';
         
@@ -270,10 +270,13 @@
                 
                 Object.keys(itens).sort((a,b) => itens[b].gp - itens[a].gp).forEach(nome => {
                     let i = itens[nome];
-                    let corClass = i.gp < 0 ? 'red' : '';
-                    tooltipHtml += `<div class="tooltip-item ${corClass}">
+                    
+                    // Define a cor: Verde se for >= 0, Vermelho se for negativo
+                    let corDeValor = i.gp >= 0 ? '#3fb950' : '#f85149'; 
+
+                    tooltipHtml += `<div class="tooltip-item">
                         <span>${i.qtd}x ${nome}</span>
-                        <span>${i.gp.toLocaleString('pt-BR')}</span>
+                        <span style="color: ${corDeValor}; font-weight: bold;">${i.gp.toLocaleString('pt-BR')}</span>
                     </div>`;
                 });
                 tooltipHtml += `</div>`;
