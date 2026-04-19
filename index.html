@@ -101,10 +101,10 @@
     .cat-chip.chip-hover:hover .cat-tooltip { display: block; }
     
     .tooltip-header { font-weight: bold; color: #cfbc91; border-bottom: 1px solid #30363d; padding-bottom: 4px; margin-bottom: 4px; }
-    .tooltip-item { display: flex; justify-content: space-between; gap: 15px; margin-top: 3px; }
-    .tooltip-item span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tooltip-item span:last-child { color: #3fb950; font-weight: bold; }
-    .tooltip-item.red span:last-child { color: #f85149; }
+    . { display: flex; justify-content: space-between; gap: 15px; margin-top: 3px; }
+    . span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    . span:last-child { color: #3fb950; font-weight: bold; }
+    ..red span:last-child { color: #f85149; }
 </style>
 </head>
 <body>
@@ -273,7 +273,7 @@
                     let corClass = i.gp < 0 ? 'red' : '';
                     tooltipHtml += `<div class="tooltip-item ${corClass}">
                         <span>${i.qtd}x ${nome}</span>
-                        <span>${formatShort(i.gp)}</span>
+                        <span>${i.gp.toLocaleString('pt-BR')}</span>
                     </div>`;
                 });
                 tooltipHtml += `</div>`;
