@@ -54,7 +54,7 @@
     .header-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
     .category-summary { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; margin-top: 10px; }
     .cat-chip { background: rgba(255, 255, 255, 0.05); padding: 2px 8px 2px 4px; border-radius: 6px; border: 1px solid #30363d; display: flex; align-items: center; font-size: 11px; gap: 6px; min-height: 28px; }
-    .semana-bloco { background: #0d1117; margin: 10px; border-radius: 6px; border: 1px solid #21262d; overflow: hidden; }
+    .semana-bloco { background: #0d1117; margin: 10px; border-radius: 6px; border: 1px solid #21262d; }
     .media-tag { background: rgba(56, 139, 253, 0.1); color: #58a6ff; padding: 4px 10px; border-radius: 12px; font-size: 12px; border: 1px solid rgba(56, 139, 253, 0.3); }
     
     .hidden { display: none; }
@@ -62,6 +62,49 @@
     .hover-reveal .view-full { display: none; } 
     .hover-reveal:hover .view-short { display: none; } 
     .hover-reveal:hover .view-full { display: inline-block; } 
+	/* --- CSS DO TOOLTIP DAS CATEGORIAS --- */
+    .cat-chip.chip-hover { 
+        position: relative; 
+        cursor: help; 
+        overflow: visible; /* Permite que o balão saia do chip */
+    }
+    
+    .cat-tooltip {
+        display: none;
+        position: absolute;
+        bottom: 120%; /* Fica acima do chip */
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1c2128;
+        border: 1px solid #484f58;
+        border-radius: 6px;
+        padding: 8px 10px;
+        width: max-content;
+        min-width: 180px;
+        max-width: 280px;
+        z-index: 999;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+        font-size: 11px;
+        color: #c9d1d9;
+        text-align: left;
+        font-weight: normal;
+        cursor: default;
+    }
+
+    /* Setinha apontando para baixo */
+    .cat-tooltip::after {
+        content: ''; position: absolute; top: 100%; left: 50%; margin-left: -6px;
+        border-width: 6px; border-style: solid; border-color: #484f58 transparent transparent transparent;
+    }
+
+    /* Mostra o balão ao passar o mouse */
+    .cat-chip.chip-hover:hover .cat-tooltip { display: block; }
+    
+    .tooltip-header { font-weight: bold; color: #cfbc91; border-bottom: 1px solid #30363d; padding-bottom: 4px; margin-bottom: 4px; }
+    .tooltip-item { display: flex; justify-content: space-between; gap: 15px; margin-top: 3px; }
+    .tooltip-item span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tooltip-item span:last-child { color: #3fb950; font-weight: bold; }
+    .tooltip-item.red span:last-child { color: #f85149; }
 </style>
 </head>
 <body>
@@ -198,14 +241,52 @@
         return `<span class="media-tag hover-reveal">📅 Média: ${formatShort(media)}/d<span class="view-full">(${media.toLocaleString('pt-BR')}/dia)</span></span>`;
     }
 
+	function getNomeExibicao(log) {
+        let nome = log.desc;
+        if (log.itemId) {
+            const idString = String(log.itemId).trim();
+            if (TRADUTOR_GE && TRADUTOR_GE[idString]) {
+                nome = TRADUTOR_GE[idString];
+            } else {
+                nome = `ID: ${log.itemId}`;
+            }
+        }
+        return nome;
+    }
+	
     function renderCategoryChips(catObj) {
-        let hasItems = Object.keys(catObj).some(skill => catObj[skill] !== 0);
+        let hasItems = Object.keys(catObj).some(skill => catObj[skill].totalGp !== 0);
         if (!hasItems) return '';
         let html = '<div class="category-summary">';
+        
         Object.keys(catObj).sort().forEach(skill => {
-            if (catObj[skill] !== 0) { html += `<div class="cat-chip">${getIconHtml(skill)} <b>${formatShort(catObj[skill])}</b></div>`; }
+            if (catObj[skill].totalGp !== 0) { 
+                let total = catObj[skill].totalGp;
+                let itens = catObj[skill].itens;
+                
+                // Constrói o HTML do balãozinho
+                let tooltipHtml = `<div class="cat-tooltip">
+                    <div class="tooltip-header">${skillLabels[skill] || skill}</div>`;
+                
+                Object.keys(itens).sort((a,b) => itens[b].gp - itens[a].gp).forEach(nome => {
+                    let i = itens[nome];
+                    let corClass = i.gp < 0 ? 'red' : '';
+                    tooltipHtml += `<div class="tooltip-item ${corClass}">
+                        <span>${i.qtd}x ${nome}</span>
+                        <span>${formatShort(i.gp)}</span>
+                    </div>`;
+                });
+                tooltipHtml += `</div>`;
+
+                // Monta o chip final
+                html += `<div class="cat-chip chip-hover">
+                    ${getIconHtml(skill)} <b>${formatShort(total)}</b>
+                    ${tooltipHtml}
+                </div>`; 
+            }
         });
-        html += '</div>'; return html;
+        html += '</div>'; 
+        return html;
     }
 
     // =========================================================
@@ -391,16 +472,33 @@
             const d = new Date(l.data + 'T12:00:00');
             const mKey = `${d.getMonth()+1}/${d.getFullYear()}`;
             const primeiroDiaMes = new Date(d.getFullYear(), d.getMonth(), 1);
-            const offsetSemana = primeiroDiaMes.getDay(); // Dom=0, Seg=1... semanas Dom-Sáb
+            const offsetSemana = primeiroDiaMes.getDay(); 
             const sKey = Math.ceil((d.getDate() + offsetSemana) / 7);
             const diaKey = l.data;
+            
             if(!meses[mKey]) meses[mKey] = { total:0, prodTotal:0, dias:new Set(), cats:{}, semanas:{} };
             if(!meses[mKey].semanas[sKey]) meses[mKey].semanas[sKey] = { total:0, prodTotal:0, dias:new Set(), cats:{}, diasObj:{} };
             if(!meses[mKey].semanas[sKey].diasObj[diaKey]) meses[mKey].semanas[sKey].diasObj[diaKey] = { total:0, logs:[] };
             
-            meses[mKey].cats[l.skill] = (meses[mKey].cats[l.skill] || 0) + l.gp;
-            meses[mKey].semanas[sKey].cats[l.skill] = (meses[mKey].semanas[sKey].cats[l.skill] || 0) + l.gp;
-            
+            // --- NOVA LÓGICA DE AGRUPAMENTO PARA OS TOOLTIPS ---
+            let nomeDoItem = getNomeExibicao(l);
+            let qtdReal = parseQtd(l.qtd);
+
+            // Mês: Inicializa e soma
+            if(!meses[mKey].cats[l.skill]) meses[mKey].cats[l.skill] = { totalGp: 0, itens: {} };
+            meses[mKey].cats[l.skill].totalGp += l.gp;
+            if(!meses[mKey].cats[l.skill].itens[nomeDoItem]) meses[mKey].cats[l.skill].itens[nomeDoItem] = { qtd: 0, gp: 0 };
+            meses[mKey].cats[l.skill].itens[nomeDoItem].qtd += qtdReal;
+            meses[mKey].cats[l.skill].itens[nomeDoItem].gp += l.gp;
+
+            // Semana: Inicializa e soma
+            if(!meses[mKey].semanas[sKey].cats[l.skill]) meses[mKey].semanas[sKey].cats[l.skill] = { totalGp: 0, itens: {} };
+            meses[mKey].semanas[sKey].cats[l.skill].totalGp += l.gp;
+            if(!meses[mKey].semanas[sKey].cats[l.skill].itens[nomeDoItem]) meses[mKey].semanas[sKey].cats[l.skill].itens[nomeDoItem] = { qtd: 0, gp: 0 };
+            meses[mKey].semanas[sKey].cats[l.skill].itens[nomeDoItem].qtd += qtdReal;
+            meses[mKey].semanas[sKey].cats[l.skill].itens[nomeDoItem].gp += l.gp;
+            // ----------------------------------------------------
+
             if(l.skill !== 'RWT' && !/rwt|saque/i.test(l.desc)) { 
                 meses[mKey].prodTotal += l.gp; 
                 meses[mKey].semanas[sKey].prodTotal += l.gp; 
@@ -454,18 +552,8 @@
                     
                     sData.diasObj[dia].logs.reverse().forEach(l => {
                         
-                        // LÓGICA DO NOME (Retroativa, sem COMPRA/VENDA escrito)
-                        let nomeExibicao = l.desc; 
-						if (l.itemId) {
-   						 // Busca no JSON carregado externamente
-    					const idString = String(l.itemId).trim();
-    
-    					if (TRADUTOR_GE && TRADUTOR_GE[idString]) {
-        					nomeExibicao = TRADUTOR_GE[idString];
-    					} else {
-        				nomeExibicao = `ID: ${l.itemId} (Não encontrado)`;
-    }
-}
+                        // LÓGICA DO NOME (Retroativa, sem COMPRA/VENDA escrito)                        
+						let nomeExibicao = getNomeExibicao(l);
 
                         html += `<tr>
                             <td class="col-skill">
