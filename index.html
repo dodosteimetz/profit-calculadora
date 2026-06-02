@@ -466,18 +466,18 @@
         salvar();
     }
 
-	// 1. Acha o custo médio global que você pagou nos insumos
-    function calcularCustoMedioUnidade(nomeExato) {
+	// 1. Acha o custo médio num escopo específico (Semana, Mês ou Global)
+    function calcularCustoEmLogs(logsArray, nomeExato) {
         let totalGasto = 0, totalQtd = 0;
-        db.logs.forEach(l => {
+        logsArray.forEach(l => {
             let nomeItem = getNomeExibicao(l).toLowerCase().trim();
             if (nomeExato === 'onyx' && nomeItem.includes('uncut')) return;
-            // Se for o item exato e for uma COMPRA (gp negativo)
             if (nomeItem === nomeExato && l.gp < 0) { 
                 totalGasto += Math.abs(l.gp); totalQtd += parseQtd(l.qtd);
             }
         });
-        return totalQtd > 0 ? (totalGasto / totalQtd) : 0;
+        // Retorna null se não encontrar o item, para forçar o sistema a buscar na próxima etapa
+        return totalQtd > 0 ? (totalGasto / totalQtd) : null; 
     }
 
     // 2. Gera as tags visuais de lucro das Facets
@@ -520,19 +520,11 @@
 	
     function renderizar() {
         const div = document.getElementById('displayLogs');
-        div.innerHTML = "";
         
-        // --- CÁLCULO BASE DE CUSTOS (Adicione este bloco) ---
-        let mediaOnyx = calcularCustoMedioUnidade('onyx');
-        let mediaSeed = calcularCustoMedioUnidade('crystal tool seed');
-        let mediaShield = calcularCustoMedioUnidade('blessed spirit shield');
-        let custoGlobalGrace = (mediaSeed * 5) + (mediaOnyx * 10);
-        let custoGlobalLuck = (mediaShield * 7) + (mediaOnyx * 10);
-        // ----------------------------------------------------
-
+		div.innerHTML = "";		
+		
         let saldo = db.pouchBase;
-        const meses = {};
-        // ... continua o código que já existe ...
+        const meses = {};        
 
         db.logs.forEach((l, idx) => {
             const d = new Date(l.data + 'T12:00:00');
@@ -582,15 +574,25 @@
 
         Object.keys(meses).reverse().forEach(m => {
             let mData = meses[m]; let mId = `m-${m.replace('/','-')}`; let mClasse = abasFechadas.has(mId) ? 'hidden' : '';
+			// Juntar todos os logs do mês para pesquisa
+        	let logsDoMes = [];
+        Object.values(mData.semanas).forEach(sem => {
+            Object.values(sem.diasObj).forEach(d => logsDoMes.push(...d.logs));
+        });
 
+        // Tenta achar no Mês. Se não achar (null), puxa do banco Global (db.logs)
+        let onyx_M = calcularCustoEmLogs(logsDoMes, 'onyx') || calcularCustoEmLogs(db.logs, 'onyx') || 0;
+        let seed_M = calcularCustoEmLogs(logsDoMes, 'crystal tool seed') || calcularCustoEmLogs(db.logs, 'crystal tool seed') || 0;
+        let shield_M = calcularCustoEmLogs(logsDoMes, 'blessed spirit shield') || calcularCustoEmLogs(db.logs, 'blessed spirit shield') || 0;
+        
+        let custoGrace_M = (seed_M * 5) + (onyx_M * 10);
+        let custoLuck_M = (shield_M * 7) + (onyx_M * 10);
             let html = `<div class="mes-container">
                 <div class="mes-header" onclick="toggle('${mId}')">
                     <div class="header-main">
                         <span style="font-weight:bold; font-size:15px; color:#cfbc91;">Mês ${m}</span>
                         <div class="header-right">
-    					${renderLucroFacets(mData.cats, custoGlobalGrace, custoGlobalLuck)}
-    					${renderMedia(mData.prodTotal, mData.dias.size)}
-    					${renderMoney(mData.total, true)}
+    					${renderLucroFacets(mData.cats, custoGrace_M, custoLuck_M)}
 						</div>
                     </div>
                     ${renderCategoryChips(mData.cats)}
@@ -599,15 +601,23 @@
 
             Object.keys(mData.semanas).reverse().forEach(s => {
                 let sData = mData.semanas[s]; let sId = `s-${m.replace('/','-')}-${s}`; let sClasse = abasFechadas.has(sId) ? 'hidden' : '';
+				// Juntar todos os logs apenas da semana
+            	let logsDaSemana = [];
+            Object.values(sData.diasObj).forEach(d => logsDaSemana.push(...d.logs));
 
+            // Efeito Cascata: Tenta na Semana. Se não achar, usa do Mês (que já tem o Global salvo)
+            let onyx_S = calcularCustoEmLogs(logsDaSemana, 'onyx') || onyx_M;
+            let seed_S = calcularCustoEmLogs(logsDaSemana, 'crystal tool seed') || seed_M;
+            let shield_S = calcularCustoEmLogs(logsDaSemana, 'blessed spirit shield') || shield_M;
+
+            let custoGrace_S = (seed_S * 5) + (onyx_S * 10);
+            let custoLuck_S = (shield_S * 7) + (onyx_S * 10);
                 html += `<div class="semana-bloco">
                     <div class="semana-header" onclick="toggle('${sId}')">
                         <div class="header-main">
                             <span style="font-weight:bold; color:#cfbc91;">Semana ${s}</span>
                             <div class="header-right">
-    						${renderLucroFacets(sData.cats, custoGlobalGrace, custoGlobalLuck)}
-    						${renderMedia(sData.prodTotal, sData.dias.size)}
-    						${renderMoney(sData.total)}
+    						${renderLucroFacets(sData.cats, custoGrace_S, custoLuck_S)}
 							</div>
                         </div>
                         ${renderCategoryChips(sData.cats)}
