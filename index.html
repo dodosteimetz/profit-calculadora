@@ -593,6 +593,7 @@
                         <span style="font-weight:bold; font-size:15px; color:#cfbc91;">Mês ${m}</span>
                         <div class="header-right">
     					${renderLucroFacets(mData.cats, custoGrace_M, custoLuck_M)}
+						${renderMedia(mData.prodTotal, mData.dias.size)}
 						</div>
                     </div>
                     ${renderCategoryChips(mData.cats)}
@@ -618,6 +619,7 @@
                             <span style="font-weight:bold; color:#cfbc91;">Semana ${s}</span>
                             <div class="header-right">
     						${renderLucroFacets(sData.cats, custoGrace_S, custoLuck_S)}
+							${renderMedia(sData.prodTotal, sData.dias.size)}
 							</div>
                         </div>
                         ${renderCategoryChips(sData.cats)}
