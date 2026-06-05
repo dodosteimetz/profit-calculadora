@@ -178,6 +178,8 @@
 		'wildcard': 'Slayer', // Captura QUALQUER tipo de wildcard
 		'rwt': 'RWT',
 		'blessed spirit shield': 'Boss',
+		'spirit shield': 'Boss',
+        'holy elixir': 'Boss',
         // Adicione mais itens e categorias aqui conforme precisar!
         // O nome deve estar em minúsculo. A categoria deve ser o ID exato (ex: 'Boss', 'nota', 'Archaeology').
     };
@@ -583,10 +585,15 @@
         // Tenta achar no Mês. Se não achar (null), puxa do banco Global (db.logs)
         let onyx_M = calcularCustoEmLogs(logsDoMes, 'onyx') || calcularCustoEmLogs(db.logs, 'onyx') || 0;
         let seed_M = calcularCustoEmLogs(logsDoMes, 'crystal tool seed') || calcularCustoEmLogs(db.logs, 'crystal tool seed') || 0;
-        let shield_M = calcularCustoEmLogs(logsDoMes, 'blessed spirit shield') || calcularCustoEmLogs(db.logs, 'blessed spirit shield') || 0;
+        let blessed_M = calcularCustoEmLogs(logsDoMes, 'blessed spirit shield') || calcularCustoEmLogs(db.logs, 'blessed spirit shield');
+        let spirit_M = calcularCustoEmLogs(logsDoMes, 'spirit shield') || calcularCustoEmLogs(db.logs, 'spirit shield') || 0;
+        let elixir_M = calcularCustoEmLogs(logsDoMes, 'holy elixir') || calcularCustoEmLogs(db.logs, 'holy elixir') || 0;
         
+        // Prioriza o Blessed. Se não achar (null), soma o escudo comum com o elixir
+        let shieldFinal_M = blessed_M !== null ? blessed_M : (spirit_M + elixir_M);
+
         let custoGrace_M = (seed_M * 5) + (onyx_M * 10);
-        let custoLuck_M = (shield_M * 7) + (onyx_M * 10);
+        let custoLuck_M = (shieldFinal_M * 7) + (onyx_M * 10);
             let html = `<div class="mes-container">
                 <div class="mes-header" onclick="toggle('${mId}')">
                     <div class="header-main">
@@ -609,10 +616,14 @@
             // Efeito Cascata: Tenta na Semana. Se não achar, usa do Mês (que já tem o Global salvo)
             let onyx_S = calcularCustoEmLogs(logsDaSemana, 'onyx') || onyx_M;
             let seed_S = calcularCustoEmLogs(logsDaSemana, 'crystal tool seed') || seed_M;
-            let shield_S = calcularCustoEmLogs(logsDaSemana, 'blessed spirit shield') || shield_M;
+            let blessed_S = calcularCustoEmLogs(logsDaSemana, 'blessed spirit shield') || blessed_M;
+            let spirit_S = calcularCustoEmLogs(logsDaSemana, 'spirit shield') || spirit_M;
+            let elixir_S = calcularCustoEmLogs(logsDaSemana, 'holy elixir') || elixir_M;
+
+            let shieldFinal_S = blessed_S !== null ? blessed_S : (spirit_S + elixir_S);
 
             let custoGrace_S = (seed_S * 5) + (onyx_S * 10);
-            let custoLuck_S = (shield_S * 7) + (onyx_S * 10);
+            let custoLuck_S = (shieldFinal_S * 7) + (onyx_S * 10);
                 html += `<div class="semana-bloco">
                     <div class="semana-header" onclick="toggle('${sId}')">
                         <div class="header-main">
